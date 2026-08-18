@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -132,6 +133,10 @@ input[type=date],
 input[type=time]{
   appearance:none;
   -webkit-appearance:none;
+}
+
+input[readonly]{
+  cursor:default;
 }
 
 input:focus{
@@ -570,21 +575,21 @@ input:focus{
          ========================= -->
 
     <div class="card">
-      
+
       <div class="label">01 / Start</div>
-      
+
       <div class="datetime-group">
-      
+
         <div class="datetime-field">
           <label for="startDate">Date / Now</label>
           <input id="startDate" type="date" readonly>
         </div>
-      
+
         <div class="datetime-field">
           <label for="startTime">Time / Now</label>
           <input id="startTime" type="time" readonly>
         </div>
-      
+
       </div>
 
 
@@ -724,7 +729,6 @@ let running=false;
 let lastTick=0;
 let raf=null;
 let endAt=0;
-let startTimeout=null;
 
 
 /* =========================
@@ -889,6 +893,19 @@ function addTask(name=''){
 
 function updateSummary(){
 
+  /*
+    START is always based on the current time.
+
+    Refresh the displayed start time whenever
+    the setup summary is recalculated.
+  */
+
+  const now=new Date();
+
+  startDate.value=localInputDate(now);
+  startTime.value=localInputTime(now);
+
+
   const s=parseLocal(
     startDate.value,
     startTime.value
@@ -906,7 +923,7 @@ function updateSummary(){
 
   if(!s || !e){
 
-    summary.textContent='SET START + END';
+    summary.textContent='SET END';
 
     return;
   }
@@ -924,8 +941,8 @@ function updateSummary(){
 
 
   summary.textContent=
-    `${fmt(sec)} AVAILABLE  /  ` +
-    `${count||0} TASKS  /  ` +
+    `${fmt(sec)} AVAILABLE  / ` +
+    `${count||0} TASKS  / ` +
     `${count ? fmt(sec/count) : '—'} EACH`;
 
 }
@@ -944,6 +961,12 @@ function setDefaults(){
   );
 
 
+  /*
+    START is initialized to NOW.
+    These values are refreshed again when
+    Initialize Workload is pressed.
+  */
+
   startDate.value=localInputDate(now);
   startTime.value=localInputTime(now);
 
@@ -961,14 +984,19 @@ function start(){
 
   error.textContent='';
 
+
   /*
-    Clear any old delayed start.
+    Capture the actual start moment NOW.
+
+    This is intentionally done when the user
+    presses Initialize Workload, not when the
+    page was opened.
   */
 
-  if(startTimeout){
-    clearTimeout(startTimeout);
-    startTimeout=null;
-  }
+  const now=new Date();
+
+  startDate.value=localInputDate(now);
+  startTime.value=localInputTime(now);
 
 
   tasks=[
@@ -978,17 +1006,12 @@ function start(){
   .filter(Boolean);
 
 
-  const s=parseLocal(
-    startDate.value,
-    startTime.value
-  );
+  const s=now;
 
   const e=parseLocal(
     endDate.value,
     endTime.value
   );
-
-  const now=new Date();
 
 
   if(!tasks.length){
@@ -999,21 +1022,18 @@ function start(){
   }
 
 
-  if(!s || !e || e<=s){
+  if(!e || e<=s){
 
-    error.textContent='END MUST BE AFTER START';
-
-    return;
-  }
-
-
-  if(e<=now){
-
-    error.textContent='END TIME HAS PASSED';
+    error.textContent='END MUST BE AFTER NOW';
 
     return;
   }
 
+
+  /*
+    Calculate the available workload from
+    the exact moment Initialize was pressed.
+  */
 
   totalSeconds=(e-s)/1000;
 
@@ -1022,18 +1042,6 @@ function start(){
   index=0;
 
   duration=totalSeconds/tasks.length;
-
-
-  /*
-    If the start is in the future,
-    wait until the selected start time.
-  */
-
-  const delay=Math.max(
-    0,
-    s.getTime()-now.getTime()
-  );
-
 
   remaining=duration;
 
@@ -1047,42 +1055,13 @@ function start(){
     .classList.add('active');
 
 
-  if(delay>0){
+  running=true;
 
-    running=false;
+  lastTick=performance.now();
 
-    render();
+  render();
 
-    document.getElementById('clock').textContent=
-      'STARTS '+fmt(delay/1000);
-
-
-    startTimeout=setTimeout(()=>{
-
-      startTimeout=null;
-
-      running=true;
-
-      lastTick=performance.now();
-
-      render();
-
-      raf=requestAnimationFrame(loop);
-
-    },delay);
-
-
-  }else{
-
-    running=true;
-
-    lastTick=performance.now();
-
-    render();
-
-    raf=requestAnimationFrame(loop);
-
-  }
+  raf=requestAnimationFrame(loop);
 
 }
 
@@ -1114,13 +1093,11 @@ function render(){
 
 
   /*
-    The progress bar represents the current task.
+    Progress represents the current task.
 
-    At zero = 100%.
-    Negative = remains full.
-
-    The timer itself is allowed to continue
-    past zero indefinitely.
+    0%   = task just started
+    100% = assigned time reached
+    >100% is clamped to 100% during overtime
   */
 
   const progress=
@@ -1149,8 +1126,6 @@ function render(){
    ========================= */
 
 /*
-  IMPORTANT:
-
   Reaching zero does NOT finish the task.
 
   The timer continues:
@@ -1163,8 +1138,8 @@ function render(){
   -00:03
   ...
 
-  The user decides when the task is actually
-  finished by pressing "Finish task".
+  The user presses FINISH TASK when
+  the task is actually complete.
 */
 
 function loop(now){
@@ -1184,10 +1159,10 @@ function loop(now){
 
 
   /*
-    There is intentionally NO deadline clamp here.
+    There is intentionally NO deadline clamp.
 
-    The overall deadline is a target/reference only.
-    The workload is allowed to continue past it.
+    The overall deadline is a target/reference.
+    The workload can continue beyond it.
   */
 
   render();
@@ -1203,29 +1178,14 @@ function loop(now){
 
 /*
   Finish the current task and redistribute
-  its remaining/overrun time across every
-  task that has not started yet.
+  its saved/overrun time across all remaining
+  tasks.
 
-  Examples:
+  Positive remaining:
+    Task finished early.
 
-  Current task:
-    +05:00 remaining
-
-  2 tasks left:
-
-    +05:00 / 2 = +02:30
-
-  Each remaining task gains 2:30.
-
-
-  Current task:
-    -05:00 remaining
-
-  2 tasks left:
-
-    -05:00 / 2 = -02:30
-
-  Each remaining task loses 2:30.
+  Negative remaining:
+    Task went overtime.
 */
 
 function next(){
@@ -1240,14 +1200,8 @@ function next(){
 
 
     /*
-      duration is the current assigned duration.
-
-      Positive remaining means the task finished early.
-
-      Negative remaining means the task went overtime.
-
-      Spread that difference evenly over
-      all remaining tasks.
+      Spread the current task's remaining time
+      across all tasks that have not started yet.
     */
 
     duration=Math.max(
@@ -1270,8 +1224,7 @@ function next(){
   }else{
 
     /*
-      The final task is only complete when the
-      user explicitly presses FINISH TASK.
+      Final task is completed manually.
     */
 
     finishAll();
@@ -1329,8 +1282,6 @@ function finishAll(){
    ========================= */
 
 [
-  startDate,
-  startTime,
   endDate,
   endTime
 ].forEach(x=>{
@@ -1418,11 +1369,6 @@ document.getElementById('back').onclick=()=>{
     raf=null;
   }
 
-  if(startTimeout){
-    clearTimeout(startTimeout);
-    startTimeout=null;
-  }
-
 
   document
     .getElementById('timer')
@@ -1431,6 +1377,17 @@ document.getElementById('back').onclick=()=>{
   document
     .getElementById('setup')
     .classList.remove('hidden');
+
+
+  /*
+    Reset the displayed START to the current
+    time immediately.
+  */
+
+  const now=new Date();
+
+  startDate.value=localInputDate(now);
+  startTime.value=localInputTime(now);
 
   updateSummary();
 
