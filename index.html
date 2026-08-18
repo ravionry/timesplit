@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TaskSplit — Workload Timer and Splitter</title>
+<style>
+:root{
+  --paper:#EEEBE5;
+  --ink:#111111;
+  --blue:#1C4FD8;
+  --red:#F4405F;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:700;
+  letter-spacing:-.02em;
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+.shell{max-width:1000px;margin:auto;padding:22px}
+header{
+  border:4px solid var(--ink);
+  background:var(--ink);
+  color:var(--paper);
+  padding:18px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+}
+.logo{font-size:28px;letter-spacing:-.06em}
+.status{font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.card{border:4px solid var(--ink);padding:18px;background:var(--paper)}
+.label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+input[type=datetime-local],input[type=text]{
+  width:100%;border:3px solid var(--ink);border-radius:0;
+  background:var(--paper);padding:13px;font-size:18px;outline:none;
+}
+input:focus{border-color:var(--blue)}
+.time-summary{
+  margin-top:14px;border:3px solid var(--ink);padding:12px;
+  font-size:15px;line-height:1.3;
+}
+.blue{background:var(--blue);color:var(--paper)}
+.red{background:var(--red);color:var(--ink)}
+.task{display:grid;grid-template-columns:1fr 48px;gap:7px;margin-bottom:8px}
+.task button{
+  border:3px solid var(--ink);background:var(--red);font-size:24px;
+}
+.add{
+  border:3px solid var(--ink);background:transparent;padding:9px 12px;
+  text-transform:uppercase;font-size:12px;
+}
+.start{
+  margin-top:18px;width:100%;border:4px solid var(--ink);
+  background:var(--blue);color:var(--paper);padding:20px;
+  font-size:22px;text-transform:uppercase;letter-spacing:-.04em;
+}
+.start:hover,.control:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
+.timer{display:none;margin-top:18px}
+.timer.active{display:block}
+.task-no{font-size:12px;text-transform:uppercase;letter-spacing:.12em}
+.task-name{font-size:clamp(28px,6vw,64px);line-height:.95;margin:12px 0 22px;max-width:850px}
+.clock{
+  font-size:clamp(64px,15vw,150px);line-height:.8;
+  letter-spacing:-.09em;margin:20px 0 28px;font-variant-numeric:tabular-nums;
+}
+.progress{height:20px;border:4px solid var(--ink);background:var(--paper)}
+.bar{height:100%;width:0;background:var(--blue)}
+.meta{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:13px;text-transform:uppercase}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:22px}
+.control{border:3px solid var(--ink);background:var(--paper);padding:14px 8px;text-transform:uppercase}
+.control.primary{background:var(--blue);color:var(--paper)}
+.control.danger{background:var(--red)}
+.hidden{display:none!important}
+.error{color:var(--red);margin-top:8px;font-size:13px}
+
+
+
+
+.footer{
+  display:block;
+  width:100%;
+  margin:28px 0 18px;
+  padding:10px 0;
+  text-align:center;
+  color:var(--ink);
+  background:transparent;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.footer a{
+  color:var(--blue);
+  text-decoration:underline;
+  text-decoration-thickness:2px;
+  text-underline-offset:3px;
+}
+
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}
+  .controls{grid-template-columns:1fr 1fr}
+  .shell{padding:12px}
+  header{padding:14px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="logo">TASKSPLIT_</div>
+  <div class="status">DEADLINE MODE / LOCAL</div>
+</header>
+
+<section id="setup">
+  <div class="grid">
+    <div class="card">
+      <div class="label">01 / Start</div>
+      <input id="startDate" type="datetime-local">
+      <br><br>
+      <div class="label">02 / End</div>
+      <input id="endDate" type="datetime-local">
+      <div id="summary" class="time-summary">CALCULATING...</div>
+      <div id="error" class="error"></div>
+    </div>
+
+    <div class="card">
+      <div class="label">03 / Workload</div>
+      <div id="tasks"></div>
+      <button id="add" class="add" type="button">+ Add task</button>
+    </div>
+  </div>
+  <button id="start" class="start" type="button">Initialize workload →</button>
+</section>
+
+<section id="timer" class="card timer">
+  <div class="task-no" id="taskCount"></div>
+  <div class="task-name" id="currentTask"></div>
+  <div class="clock" id="clock">00:00</div>
+  <div class="progress"><div id="bar" class="bar"></div></div>
+  <div class="meta"><span id="overall"></span><span id="deadline"></span></div>
+  <div class="controls">
+    <button id="pause" class="control primary" type="button">Pause</button>
+    <button id="skip" class="control" type="button">Finish task</button>
+    <button id="plus5" class="control" type="button">+5 min</button>
+    <button id="back" class="control danger" type="button">Reset</button>
+  </div>
+</section>
+
+<footer id="credits" class="footer">
+  made by <a href="https://github.com/ravionry" target="_blank" rel="noopener noreferrer">@ravionry</a>
+</footer>
+</div>
+
+<script>
+const tasksEl=document.getElementById('tasks');
+const startDate=document.getElementById('startDate'),endDate=document.getElementById('endDate');
+const summary=document.getElementById('summary'),error=document.getElementById('error');
+let tasks=[],index=0,remaining=0,duration=0,totalSeconds=0,running=false,lastTick=0,raf=null,endAt=0;
+
+function pad(n){return String(n).padStart(2,'0')}
+function localInputDate(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes())}
+function parseLocal(v){return v?new Date(v):null}
+function fmt(sec){
+ sec=Math.max(0,Math.ceil(sec));let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+ return h?`${pad(h)}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`
+}
+function fmtClock(d){return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+function addTask(name=''){
+ const row=document.createElement('div');row.className='task';
+ const input=document.createElement('input');input.type='text';input.placeholder='TASK';input.value=name;
+ const btn=document.createElement('button');btn.type='button';btn.textContent='×';
+ btn.onclick=()=>{row.remove();if(!tasksEl.children.length)addTask();updateSummary()};
+ row.append(input,btn);tasksEl.append(row);input.addEventListener('input',updateSummary)
+}
+function updateSummary(){
+ const s=parseLocal(startDate.value),e=parseLocal(endDate.value);
+ const count=[...tasksEl.querySelectorAll('input')].filter(x=>x.value.trim()).length;
+ if(!s||!e){summary.textContent='SET START + END';return}
+ const sec=(e-s)/1000;
+ if(sec<=0){summary.textContent='INVALID WINDOW';return}
+ summary.textContent=`${fmt(sec)} AVAILABLE  /  ${count||0} TASKS  /  ${count?fmt(sec/count):'—'} EACH`
+}
+function setDefaults(){
+ const now=new Date(),end=new Date(now.getTime()+2*3600000);
+ startDate.value=localInputDate(now);endDate.value=localInputDate(end)
+}
+function start(){
+ error.textContent='';
+ tasks=[...tasksEl.querySelectorAll('input')].map(x=>x.value.trim()).filter(Boolean);
+ const s=parseLocal(startDate.value),e=parseLocal(endDate.value),now=new Date();
+ if(!tasks.length){error.textContent='ADD AT LEAST ONE TASK';return}
+ if(!s||!e||e<=s){error.textContent='END MUST BE AFTER START';return}
+ if(e<=now){error.textContent='END TIME HAS PASSED';return}
+ totalSeconds=(e-s)/1000;endAt=e.getTime();
+ index=0;duration=totalSeconds/tasks.length;
+ // If the start is in the future, begin at the specified start time.
+ const delay=Math.max(0,s.getTime()-now.getTime());
+ remaining=duration;
+ document.getElementById('setup').classList.add('hidden');
+ document.getElementById('timer').classList.add('active');
+ if(delay>0){
+   running=false;render();
+   document.getElementById('clock').textContent='STARTS '+fmt(delay/1000);
+   setTimeout(()=>{running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)},delay);
+ }else{
+   running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)
+ }
+}
+function render(){
+ document.getElementById('currentTask').textContent=tasks[index]||'WORKLOAD COMPLETE';
+ document.getElementById('clock').textContent=fmt(remaining);
+ document.getElementById('taskCount').textContent=`TASK ${index+1} / ${tasks.length}`;
+ document.getElementById('overall').textContent=`${Math.max(0,tasks.length-index-1)} REMAINING`;
+ document.getElementById('deadline').textContent=`DEADLINE ${fmtClock(new Date(endAt))}`;
+ document.getElementById('bar').style.width=Math.max(0,Math.min(100,(1-remaining/duration)*100))+'%';
+ document.getElementById('pause').textContent=running?'Pause':'Resume';
+}
+function loop(now){
+ if(!running)return;
+ const t=now??performance.now(),delta=(t-lastTick)/1000;lastTick=t;remaining-=delta;
+ // Never allow the workload to run past the actual deadline.
+ const untilDeadline=(endAt-Date.now())/1000;
+ if(untilDeadline<=0){finishAll();return}
+ if(remaining>untilDeadline)remaining=untilDeadline;
+ if(remaining<=0){next();return}
+ render();raf=requestAnimationFrame(loop)
+}
+function next(){
+ if(index<tasks.length-1){
+   const saved=Math.max(0,remaining);index++;
+   const left=tasks.length-index;
+   // Redistribute time saved from the completed task across remaining tasks.
+   duration=Math.max(1,duration+saved/left);remaining=duration;
+   running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)
+ }else finishAll()
+}
+function finishAll(){
+ running=false;remaining=0;
+ document.getElementById('currentTask').textContent='WORKLOAD COMPLETE';
+ document.getElementById('taskCount').textContent='DONE';
+ document.getElementById('overall').textContent='ALL TASKS FINISHED';
+ document.getElementById('clock').textContent='00:00';
+ document.getElementById('bar').style.width='100%';
+}
+[startDate,endDate].forEach(x=>x.addEventListener('input',updateSummary));
+document.getElementById('add').onclick=()=>addTask();
+document.getElementById('start').onclick=start;
+document.getElementById('pause').onclick=()=>{
+ if(!running){running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)}
+ else{running=false;render()}
+};
+document.getElementById('skip').onclick=next;
+document.getElementById('plus5').onclick=()=>{remaining+=300;duration+=300;render()};
+document.getElementById('back').onclick=()=>{
+ running=false;cancelAnimationFrame(raf);
+ document.getElementById('timer').classList.remove('active');
+ document.getElementById('setup').classList.remove('hidden');updateSummary()
+};
+setDefaults();addTask();addTask();updateSummary();
+</script>
+</body>
+</html>
