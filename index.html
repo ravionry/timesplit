@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TaskSplit — Workload Timer and Splitter</title>
+
 <style>
 :root{
   --paper:#EEEBE5;
@@ -11,16 +12,41 @@
   --blue:#1C4FD8;
   --red:#F4405F;
 }
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
+  min-height:100%;
+  background:var(--paper);
+  color:var(--ink);
+}
+
 body{
   font-family:Arial,Helvetica,sans-serif;
   font-weight:700;
   letter-spacing:-.02em;
 }
-button,input{font:inherit;color:inherit}
-button{cursor:pointer}
-.shell{max-width:1000px;margin:auto;padding:22px}
+
+button,
+input{
+  font:inherit;
+  color:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.shell{
+  max-width:1000px;
+  margin:auto;
+  padding:22px;
+}
+
 header{
   border:4px solid var(--ink);
   background:var(--ink);
@@ -31,56 +57,239 @@ header{
   align-items:center;
   gap:20px;
 }
-.logo{font-size:28px;letter-spacing:-.06em}
-.status{font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
-.card{border:4px solid var(--ink);padding:18px;background:var(--paper)}
-.label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
-input[type=datetime-local],input[type=text]{
-  width:100%;border:3px solid var(--ink);border-radius:0;
-  background:var(--paper);padding:13px;font-size:18px;outline:none;
+
+.logo{
+  font-size:28px;
+  letter-spacing:-.06em;
 }
-input:focus{border-color:var(--blue)}
+
+.status{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin-top:18px;
+}
+
+.card{
+  border:4px solid var(--ink);
+  padding:18px;
+  background:var(--paper);
+}
+
+.label{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:8px;
+}
+
+/* =========================
+   DATE / TIME CONTROLS
+   ========================= */
+
+.datetime-group{
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr);
+  gap:8px;
+  width:100%;
+  margin-bottom:18px;
+}
+
+.datetime-field{
+  min-width:0;
+}
+
+.datetime-field label{
+  display:block;
+  margin-bottom:5px;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+input[type=date],
+input[type=time],
+input[type=text]{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  border:3px solid var(--ink);
+  border-radius:0;
+  background:var(--paper);
+  padding:13px;
+  font-size:18px;
+  outline:none;
+}
+
+input[type=date],
+input[type=time]{
+  appearance:none;
+  -webkit-appearance:none;
+}
+
+input:focus{
+  border-color:var(--blue);
+}
+
 .time-summary{
-  margin-top:14px;border:3px solid var(--ink);padding:12px;
-  font-size:15px;line-height:1.3;
+  margin-top:4px;
+  border:3px solid var(--ink);
+  padding:12px;
+  font-size:15px;
+  line-height:1.3;
 }
-.blue{background:var(--blue);color:var(--paper)}
-.red{background:var(--red);color:var(--ink)}
-.task{display:grid;grid-template-columns:1fr 48px;gap:7px;margin-bottom:8px}
+
+.blue{
+  background:var(--blue);
+  color:var(--paper);
+}
+
+.red{
+  background:var(--red);
+  color:var(--ink);
+}
+
+/* =========================
+   TASKS
+   ========================= */
+
+.task{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 48px;
+  gap:7px;
+  margin-bottom:8px;
+}
+
 .task button{
-  border:3px solid var(--ink);background:var(--red);font-size:24px;
+  border:3px solid var(--ink);
+  background:var(--red);
+  font-size:24px;
 }
+
 .add{
-  border:3px solid var(--ink);background:transparent;padding:9px 12px;
-  text-transform:uppercase;font-size:12px;
+  border:3px solid var(--ink);
+  background:transparent;
+  padding:9px 12px;
+  text-transform:uppercase;
+  font-size:12px;
 }
+
 .start{
-  margin-top:18px;width:100%;border:4px solid var(--ink);
-  background:var(--blue);color:var(--paper);padding:20px;
-  font-size:22px;text-transform:uppercase;letter-spacing:-.04em;
+  margin-top:18px;
+  width:100%;
+  border:4px solid var(--ink);
+  background:var(--blue);
+  color:var(--paper);
+  padding:20px;
+  font-size:22px;
+  text-transform:uppercase;
+  letter-spacing:-.04em;
 }
-.start:hover,.control:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
-.timer{display:none;margin-top:18px}
-.timer.active{display:block}
-.task-no{font-size:12px;text-transform:uppercase;letter-spacing:.12em}
-.task-name{font-size:clamp(28px,6vw,64px);line-height:.95;margin:12px 0 22px;max-width:850px}
+
+.start:hover,
+.control:hover{
+  transform:translate(-2px,-2px);
+  box-shadow:5px 5px 0 var(--ink);
+}
+
+/* =========================
+   TIMER
+   ========================= */
+
+.timer{
+  display:none;
+  margin-top:18px;
+}
+
+.timer.active{
+  display:block;
+}
+
+.task-no{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
+
+.task-name{
+  font-size:clamp(28px,6vw,64px);
+  line-height:.95;
+  margin:12px 0 22px;
+  max-width:850px;
+}
+
 .clock{
-  font-size:clamp(64px,15vw,150px);line-height:.8;
-  letter-spacing:-.09em;margin:20px 0 28px;font-variant-numeric:tabular-nums;
+  font-size:clamp(64px,15vw,150px);
+  line-height:.8;
+  letter-spacing:-.09em;
+  margin:20px 0 28px;
+  font-variant-numeric:tabular-nums;
 }
-.progress{height:20px;border:4px solid var(--ink);background:var(--paper)}
-.bar{height:100%;width:0;background:var(--blue)}
-.meta{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:13px;text-transform:uppercase}
-.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:22px}
-.control{border:3px solid var(--ink);background:var(--paper);padding:14px 8px;text-transform:uppercase}
-.control.primary{background:var(--blue);color:var(--paper)}
-.control.danger{background:var(--red)}
-.hidden{display:none!important}
-.error{color:var(--red);margin-top:8px;font-size:13px}
 
+.progress{
+  height:20px;
+  border:4px solid var(--ink);
+  background:var(--paper);
+}
 
+.bar{
+  height:100%;
+  width:0;
+  background:var(--blue);
+}
 
+.meta{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:10px;
+  font-size:13px;
+  text-transform:uppercase;
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-top:22px;
+}
+
+.control{
+  border:3px solid var(--ink);
+  background:var(--paper);
+  padding:14px 8px;
+  text-transform:uppercase;
+}
+
+.control.primary{
+  background:var(--blue);
+  color:var(--paper);
+}
+
+.control.danger{
+  background:var(--red);
+}
+
+.hidden{
+  display:none!important;
+}
+
+.error{
+  color:var(--red);
+  margin-top:8px;
+  font-size:13px;
+}
+
+/* =========================
+   FOOTER
+   ========================= */
 
 .footer{
   display:block;
@@ -95,6 +304,7 @@ input:focus{border-color:var(--blue)}
   text-transform:uppercase;
   letter-spacing:.08em;
 }
+
 .footer a{
   color:var(--blue);
   text-decoration:underline;
@@ -102,208 +312,1028 @@ input:focus{border-color:var(--blue)}
   text-underline-offset:3px;
 }
 
+/* =========================
+   MOBILE
+   ========================= */
+
 @media(max-width:700px){
-  .grid{grid-template-columns:1fr}
-  .controls{grid-template-columns:1fr 1fr}
-  .shell{padding:12px}
-  header{padding:14px}
+
+  html{
+    font-size:16px;
+  }
+
+  body{
+    overflow-x:hidden;
+  }
+
+  .shell{
+    width:100%;
+    padding:10px;
+  }
+
+  header{
+    padding:13px 14px;
+    border-width:3px;
+    align-items:flex-start;
+    flex-direction:column;
+    gap:5px;
+  }
+
+  .logo{
+    font-size:25px;
+  }
+
+  .status{
+    font-size:10px;
+  }
+
+  .grid{
+    display:block;
+    margin-top:10px;
+  }
+
+  .card{
+    border-width:3px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+
+  .grid .card + .card{
+    margin-top:10px;
+  }
+
+  /*
+    DATE + TIME
+
+    Instead of one giant datetime-local control,
+    mobile gets two controlled native inputs.
+  */
+
+  .datetime-group{
+    grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr);
+    gap:7px;
+    margin-bottom:16px;
+  }
+
+  .datetime-field{
+    min-width:0;
+    overflow:hidden;
+  }
+
+  .datetime-field label{
+    font-size:9px;
+    margin-bottom:4px;
+  }
+
+  input[type=date],
+  input[type=time],
+  input[type=text]{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    min-height:48px;
+    height:48px;
+    padding:10px 9px;
+    border-width:3px;
+    border-radius:0;
+    font-size:15px;
+  }
+
+  /*
+    Prevent Safari's native date/time controls
+    from forcing the input outside its container.
+  */
+
+  input[type=date]::-webkit-date-and-time-value{
+    text-align:left;
+  }
+
+  input[type=date]::-webkit-calendar-picker-indicator,
+  input[type=time]::-webkit-calendar-picker-indicator{
+    margin:0;
+    padding:0;
+  }
+
+  .time-summary{
+    border-width:3px;
+    font-size:13px;
+    padding:10px;
+    word-break:break-word;
+  }
+
+  .task{
+    grid-template-columns:minmax(0,1fr) 44px;
+    gap:6px;
+    margin-bottom:7px;
+  }
+
+  .task button{
+    min-height:48px;
+    border-width:3px;
+  }
+
+  .add{
+    min-height:44px;
+    padding:10px 12px;
+  }
+
+  .start{
+    margin-top:10px;
+    min-height:58px;
+    padding:14px;
+    border-width:3px;
+    font-size:18px;
+  }
+
+  .timer{
+    padding:14px;
+    margin-top:10px;
+  }
+
+  .task-name{
+    font-size:clamp(30px,10vw,48px);
+    line-height:.92;
+    margin:10px 0 18px;
+    overflow-wrap:anywhere;
+  }
+
+  .clock{
+    font-size:clamp(55px,17vw,92px);
+    letter-spacing:-.08em;
+    margin:18px 0 22px;
+    white-space:nowrap;
+  }
+
+  .progress{
+    height:14px;
+    border-width:3px;
+  }
+
+  .meta{
+    font-size:10px;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:4px;
+  }
+
+  .controls{
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    margin-top:16px;
+  }
+
+  .control{
+    min-height:50px;
+    padding:11px 7px;
+    border-width:3px;
+    font-size:12px;
+  }
+
+  .footer{
+    position:static;
+    transform:none;
+    width:100%;
+    margin:22px 0 10px;
+    padding:10px 0;
+    border:0;
+    background:transparent;
+    color:var(--ink);
+    font-size:11px;
+  }
+
+  .footer a{
+    color:var(--blue);
+  }
 }
 
-/* Mobile-first refinements */
-@media (max-width:700px){
-  html{font-size:16px}
-  body{overflow-x:hidden}
-  .shell{width:100%;padding:10px}
-  header{padding:13px 14px;border-width:3px;align-items:flex-start;flex-direction:column;gap:5px}
-  .logo{font-size:25px}
-  .status{font-size:10px}
-  .grid{display:block;margin-top:10px}
-  .card{border-width:3px;padding:14px;margin-bottom:10px}
-  .grid .card + .card{margin-top:10px}
-  input[type=datetime-local],input[type=text]{width:100%;min-height:48px;padding:11px;border-width:3px;font-size:16px;border-radius:0}
-  .task{grid-template-columns:minmax(0,1fr) 44px;gap:6px;margin-bottom:7px}
-  .task button{min-height:48px;border-width:3px}
-  .add{min-height:44px;padding:10px 12px}
-  .time-summary{border-width:3px;font-size:13px;padding:10px;word-break:break-word}
-  .start{margin-top:10px;min-height:58px;padding:14px;border-width:3px;font-size:18px}
-  .timer{padding:14px;margin-top:10px}
-  .task-name{font-size:clamp(30px,10vw,48px);line-height:.92;margin:10px 0 18px;overflow-wrap:anywhere}
-  .clock{font-size:clamp(55px,17vw,92px);letter-spacing:-.08em;margin:18px 0 22px;white-space:nowrap}
-  .progress{height:14px;border-width:3px}
-  .meta{font-size:10px;flex-direction:column;align-items:flex-start;gap:4px}
-  .controls{grid-template-columns:1fr 1fr;gap:7px;margin-top:16px}
-  .control{min-height:50px;padding:11px 7px;border-width:3px;font-size:12px}
-  .footer{position:static;transform:none;width:100%;margin:22px 0 10px;padding:10px 0;border:0;background:transparent;color:var(--ink);font-size:11px}
-  .footer a{color:var(--blue)}
+/* =========================
+   VERY SMALL PHONES
+   ========================= */
+
+@media(max-width:380px){
+
+  .shell{
+    padding:7px;
+  }
+
+  .card{
+    padding:11px;
+  }
+
+  .logo{
+    font-size:22px;
+  }
+
+  .datetime-group{
+    gap:5px;
+  }
+
+  input[type=date],
+  input[type=time]{
+    font-size:14px;
+    padding-left:7px;
+    padding-right:7px;
+  }
+
+  .clock{
+    font-size:50px;
+  }
+
+  .controls{
+    grid-template-columns:1fr;
+  }
+
+  .control{
+    width:100%;
+  }
+
+  .task-name{
+    font-size:29px;
+  }
 }
-@media (max-width:380px){
-  .shell{padding:7px}
-  .card{padding:11px}
-  .logo{font-size:22px}
-  .clock{font-size:50px}
-  .controls{grid-template-columns:1fr}
-  .control{width:100%}
-  .task-name{font-size:29px}
-}
-@media (min-width:701px){
-  .footer{position:static;transform:none}
+
+@media(min-width:701px){
+  .footer{
+    position:static;
+  }
 }
 
 </style>
 </head>
+
 <body>
+
 <div class="shell">
+
 <header>
   <div class="logo">TASKSPLIT_</div>
   <div class="status">DEADLINE MODE / LOCAL</div>
 </header>
 
+
 <section id="setup">
+
   <div class="grid">
-    <div class="card">
-      <div class="label">01 / Start</div>
-      <input id="startDate" type="datetime-local">
-      <br><br>
-      <div class="label">02 / End</div>
-      <input id="endDate" type="datetime-local">
-      <div id="summary" class="time-summary">CALCULATING...</div>
-      <div id="error" class="error"></div>
-    </div>
+
+    <!-- =========================
+         START / END
+         ========================= -->
 
     <div class="card">
-      <div class="label">03 / Workload</div>
-      <div id="tasks"></div>
-      <button id="add" class="add" type="button">+ Add task</button>
+
+      <div class="label">01 / Start</div>
+
+      <div class="datetime-group">
+
+        <div class="datetime-field">
+          <label for="startDate">Date</label>
+          <input id="startDate" type="date">
+        </div>
+
+        <div class="datetime-field">
+          <label for="startTime">Time</label>
+          <input id="startTime" type="time">
+        </div>
+
+      </div>
+
+
+      <div class="label">02 / End</div>
+
+      <div class="datetime-group">
+
+        <div class="datetime-field">
+          <label for="endDate">Date</label>
+          <input id="endDate" type="date">
+        </div>
+
+        <div class="datetime-field">
+          <label for="endTime">Time</label>
+          <input id="endTime" type="time">
+        </div>
+
+      </div>
+
+
+      <div id="summary" class="time-summary">
+        CALCULATING...
+      </div>
+
+      <div id="error" class="error"></div>
+
     </div>
+
+
+    <!-- =========================
+         WORKLOAD
+         ========================= -->
+
+    <div class="card">
+
+      <div class="label">03 / Workload</div>
+
+      <div id="tasks"></div>
+
+      <button id="add" class="add" type="button">
+        + Add task
+      </button>
+
+    </div>
+
   </div>
-  <button id="start" class="start" type="button">Initialize workload →</button>
+
+
+  <button id="start" class="start" type="button">
+    Initialize workload →
+  </button>
+
 </section>
+
+
+<!-- =========================
+     TIMER
+     ========================= -->
 
 <section id="timer" class="card timer">
+
   <div class="task-no" id="taskCount"></div>
+
   <div class="task-name" id="currentTask"></div>
-  <div class="clock" id="clock">00:00</div>
-  <div class="progress"><div id="bar" class="bar"></div></div>
-  <div class="meta"><span id="overall"></span><span id="deadline"></span></div>
-  <div class="controls">
-    <button id="pause" class="control primary" type="button">Pause</button>
-    <button id="skip" class="control" type="button">Finish task</button>
-    <button id="plus5" class="control" type="button">+5 min</button>
-    <button id="back" class="control danger" type="button">Reset</button>
+
+  <div class="clock" id="clock">
+    00:00
   </div>
+
+  <div class="progress">
+    <div id="bar" class="bar"></div>
+  </div>
+
+  <div class="meta">
+    <span id="overall"></span>
+    <span id="deadline"></span>
+  </div>
+
+  <div class="controls">
+
+    <button id="pause" class="control primary" type="button">
+      Pause
+    </button>
+
+    <button id="skip" class="control" type="button">
+      Finish task
+    </button>
+
+    <button id="plus5" class="control" type="button">
+      +5 min
+    </button>
+
+    <button id="back" class="control danger" type="button">
+      Reset
+    </button>
+
+  </div>
+
 </section>
 
+
 <footer id="credits" class="footer">
-  made by <a href="https://github.com/ravionry" target="_blank" rel="noopener noreferrer">@ravionry</a>
+  made by
+  <a
+    href="https://github.com/ravionry"
+    target="_blank"
+    rel="noopener noreferrer"
+  >@ravionry</a>
 </footer>
+
 </div>
 
-<script>
-const tasksEl=document.getElementById('tasks');
-const startDate=document.getElementById('startDate'),endDate=document.getElementById('endDate');
-const summary=document.getElementById('summary'),error=document.getElementById('error');
-let tasks=[],index=0,remaining=0,duration=0,totalSeconds=0,running=false,lastTick=0,raf=null,endAt=0;
 
-function pad(n){return String(n).padStart(2,'0')}
-function localInputDate(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes())}
-function parseLocal(v){return v?new Date(v):null}
+<script>
+
+/* =========================
+   ELEMENTS
+   ========================= */
+
+const tasksEl=document.getElementById('tasks');
+
+const startDate=document.getElementById('startDate');
+const startTime=document.getElementById('startTime');
+
+const endDate=document.getElementById('endDate');
+const endTime=document.getElementById('endTime');
+
+const summary=document.getElementById('summary');
+const error=document.getElementById('error');
+
+let tasks=[];
+let index=0;
+let remaining=0;
+let duration=0;
+let totalSeconds=0;
+let running=false;
+let lastTick=0;
+let raf=null;
+let endAt=0;
+
+
+/* =========================
+   HELPERS
+   ========================= */
+
+function pad(n){
+  return String(n).padStart(2,'0');
+}
+
+
+function localInputDate(d){
+  return (
+    d.getFullYear() +
+    "-" +
+    pad(d.getMonth()+1) +
+    "-" +
+    pad(d.getDate())
+  );
+}
+
+
+function localInputTime(d){
+  return (
+    pad(d.getHours()) +
+    ":" +
+    pad(d.getMinutes())
+  );
+}
+
+
+/*
+  Combine separate Date + Time inputs
+  into one local Date object.
+*/
+
+function parseLocal(dateValue,timeValue){
+
+  if(!dateValue || !timeValue){
+    return null;
+  }
+
+  const [year,month,day]=dateValue.split('-').map(Number);
+  const [hour,minute]=timeValue.split(':').map(Number);
+
+  if(
+    !year ||
+    !month ||
+    !day ||
+    Number.isNaN(hour) ||
+    Number.isNaN(minute)
+  ){
+    return null;
+  }
+
+  return new Date(
+    year,
+    month-1,
+    day,
+    hour,
+    minute,
+    0,
+    0
+  );
+}
+
+
 function fmt(sec){
- sec=Math.max(0,Math.ceil(sec));let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
- return h?`${pad(h)}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`
+
+  sec=Math.max(0,Math.ceil(sec));
+
+  let h=Math.floor(sec/3600);
+  let m=Math.floor((sec%3600)/60);
+  let s=sec%60;
+
+  return h
+    ? `${pad(h)}:${pad(m)}:${pad(s)}`
+    : `${pad(m)}:${pad(s)}`;
 }
-function fmtClock(d){return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+
+
+function fmtClock(d){
+
+  return d.toLocaleTimeString([],{
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+
+}
+
+
+/* =========================
+   TASK MANAGEMENT
+   ========================= */
+
 function addTask(name=''){
- const row=document.createElement('div');row.className='task';
- const input=document.createElement('input');input.type='text';input.placeholder='TASK';input.value=name;
- const btn=document.createElement('button');btn.type='button';btn.textContent='×';
- btn.onclick=()=>{row.remove();if(!tasksEl.children.length)addTask();updateSummary()};
- row.append(input,btn);tasksEl.append(row);input.addEventListener('input',updateSummary)
+
+  const row=document.createElement('div');
+  row.className='task';
+
+  const input=document.createElement('input');
+
+  input.type='text';
+  input.placeholder='TASK';
+  input.value=name;
+
+  const btn=document.createElement('button');
+
+  btn.type='button';
+  btn.textContent='×';
+
+  btn.onclick=()=>{
+
+    row.remove();
+
+    if(!tasksEl.children.length){
+      addTask();
+    }
+
+    updateSummary();
+
+  };
+
+  row.append(input,btn);
+  tasksEl.append(row);
+
+  input.addEventListener('input',updateSummary);
+
 }
+
+
+/* =========================
+   SUMMARY
+   ========================= */
+
 function updateSummary(){
- const s=parseLocal(startDate.value),e=parseLocal(endDate.value);
- const count=[...tasksEl.querySelectorAll('input')].filter(x=>x.value.trim()).length;
- if(!s||!e){summary.textContent='SET START + END';return}
- const sec=(e-s)/1000;
- if(sec<=0){summary.textContent='INVALID WINDOW';return}
- summary.textContent=`${fmt(sec)} AVAILABLE  /  ${count||0} TASKS  /  ${count?fmt(sec/count):'—'} EACH`
+
+  const s=parseLocal(
+    startDate.value,
+    startTime.value
+  );
+
+  const e=parseLocal(
+    endDate.value,
+    endTime.value
+  );
+
+  const count=[
+    ...tasksEl.querySelectorAll('input')
+  ].filter(x=>x.value.trim()).length;
+
+
+  if(!s || !e){
+
+    summary.textContent='SET START + END';
+
+    return;
+  }
+
+
+  const sec=(e-s)/1000;
+
+
+  if(sec<=0){
+
+    summary.textContent='INVALID WINDOW';
+
+    return;
+  }
+
+
+  summary.textContent=
+    `${fmt(sec)} AVAILABLE  /  ` +
+    `${count||0} TASKS  /  ` +
+    `${count ? fmt(sec/count) : '—'} EACH`;
+
 }
+
+
+/* =========================
+   DEFAULT DATE / TIME
+   ========================= */
+
 function setDefaults(){
- const now=new Date(),end=new Date(now.getTime()+2*3600000);
- startDate.value=localInputDate(now);endDate.value=localInputDate(end)
+
+  const now=new Date();
+
+  const end=new Date(
+    now.getTime()+2*3600000
+  );
+
+
+  startDate.value=localInputDate(now);
+  startTime.value=localInputTime(now);
+
+  endDate.value=localInputDate(end);
+  endTime.value=localInputTime(end);
+
 }
+
+
+/* =========================
+   START WORKLOAD
+   ========================= */
+
 function start(){
- error.textContent='';
- tasks=[...tasksEl.querySelectorAll('input')].map(x=>x.value.trim()).filter(Boolean);
- const s=parseLocal(startDate.value),e=parseLocal(endDate.value),now=new Date();
- if(!tasks.length){error.textContent='ADD AT LEAST ONE TASK';return}
- if(!s||!e||e<=s){error.textContent='END MUST BE AFTER START';return}
- if(e<=now){error.textContent='END TIME HAS PASSED';return}
- totalSeconds=(e-s)/1000;endAt=e.getTime();
- index=0;duration=totalSeconds/tasks.length;
- // If the start is in the future, begin at the specified start time.
- const delay=Math.max(0,s.getTime()-now.getTime());
- remaining=duration;
- document.getElementById('setup').classList.add('hidden');
- document.getElementById('timer').classList.add('active');
- if(delay>0){
-   running=false;render();
-   document.getElementById('clock').textContent='STARTS '+fmt(delay/1000);
-   setTimeout(()=>{running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)},delay);
- }else{
-   running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)
- }
+
+  error.textContent='';
+
+
+  tasks=[
+    ...tasksEl.querySelectorAll('input')
+  ]
+  .map(x=>x.value.trim())
+  .filter(Boolean);
+
+
+  const s=parseLocal(
+    startDate.value,
+    startTime.value
+  );
+
+  const e=parseLocal(
+    endDate.value,
+    endTime.value
+  );
+
+  const now=new Date();
+
+
+  if(!tasks.length){
+
+    error.textContent='ADD AT LEAST ONE TASK';
+
+    return;
+  }
+
+
+  if(!s || !e || e<=s){
+
+    error.textContent='END MUST BE AFTER START';
+
+    return;
+  }
+
+
+  if(e<=now){
+
+    error.textContent='END TIME HAS PASSED';
+
+    return;
+  }
+
+
+  totalSeconds=(e-s)/1000;
+
+  endAt=e.getTime();
+
+  index=0;
+
+  duration=totalSeconds/tasks.length;
+
+
+  /*
+    If the start is in the future,
+    wait until the selected start time.
+  */
+
+  const delay=Math.max(
+    0,
+    s.getTime()-now.getTime()
+  );
+
+
+  remaining=duration;
+
+
+  document
+    .getElementById('setup')
+    .classList.add('hidden');
+
+  document
+    .getElementById('timer')
+    .classList.add('active');
+
+
+  if(delay>0){
+
+    running=false;
+
+    render();
+
+    document.getElementById('clock').textContent=
+      'STARTS '+fmt(delay/1000);
+
+
+    setTimeout(()=>{
+
+      running=true;
+
+      lastTick=performance.now();
+
+      render();
+
+      raf=requestAnimationFrame(loop);
+
+    },delay);
+
+
+  }else{
+
+    running=true;
+
+    lastTick=performance.now();
+
+    render();
+
+    raf=requestAnimationFrame(loop);
+
+  }
+
 }
+
+
+/* =========================
+   TIMER RENDER
+   ========================= */
+
 function render(){
- document.getElementById('currentTask').textContent=tasks[index]||'WORKLOAD COMPLETE';
- document.getElementById('clock').textContent=fmt(remaining);
- document.getElementById('taskCount').textContent=`TASK ${index+1} / ${tasks.length}`;
- document.getElementById('overall').textContent=`${Math.max(0,tasks.length-index-1)} REMAINING`;
- document.getElementById('deadline').textContent=`DEADLINE ${fmtClock(new Date(endAt))}`;
- document.getElementById('bar').style.width=Math.max(0,Math.min(100,(1-remaining/duration)*100))+'%';
- document.getElementById('pause').textContent=running?'Pause':'Resume';
+
+  document.getElementById('currentTask').textContent=
+    tasks[index] || 'WORKLOAD COMPLETE';
+
+
+  document.getElementById('clock').textContent=
+    fmt(remaining);
+
+
+  document.getElementById('taskCount').textContent=
+    `TASK ${index+1} / ${tasks.length}`;
+
+
+  document.getElementById('overall').textContent=
+    `${Math.max(0,tasks.length-index-1)} REMAINING`;
+
+
+  document.getElementById('deadline').textContent=
+    `DEADLINE ${fmtClock(new Date(endAt))}`;
+
+
+  document.getElementById('bar').style.width=
+    Math.max(
+      0,
+      Math.min(
+        100,
+        (1-remaining/duration)*100
+      )
+    )+'%';
+
+
+  document.getElementById('pause').textContent=
+    running ? 'Pause' : 'Resume';
+
 }
+
+
+/* =========================
+   TIMER LOOP
+   ========================= */
+
 function loop(now){
- if(!running)return;
- const t=now??performance.now(),delta=(t-lastTick)/1000;lastTick=t;remaining-=delta;
- // Never allow the workload to run past the actual deadline.
- const untilDeadline=(endAt-Date.now())/1000;
- if(untilDeadline<=0){finishAll();return}
- if(remaining>untilDeadline)remaining=untilDeadline;
- if(remaining<=0){next();return}
- render();raf=requestAnimationFrame(loop)
+
+  if(!running){
+    return;
+  }
+
+
+  const t=now ?? performance.now();
+
+  const delta=(t-lastTick)/1000;
+
+  lastTick=t;
+
+  remaining-=delta;
+
+
+  /*
+    Never allow the workload
+    to run past the actual deadline.
+  */
+
+  const untilDeadline=
+    (endAt-Date.now())/1000;
+
+
+  if(untilDeadline<=0){
+
+    finishAll();
+
+    return;
+  }
+
+
+  if(remaining>untilDeadline){
+
+    remaining=untilDeadline;
+
+  }
+
+
+  if(remaining<=0){
+
+    next();
+
+    return;
+  }
+
+
+  render();
+
+  raf=requestAnimationFrame(loop);
+
 }
+
+
+/* =========================
+   NEXT TASK
+   ========================= */
+
 function next(){
- if(index<tasks.length-1){
-   const saved=Math.max(0,remaining);index++;
-   const left=tasks.length-index;
-   // Redistribute time saved from the completed task across remaining tasks.
-   duration=Math.max(1,duration+saved/left);remaining=duration;
-   running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)
- }else finishAll()
+
+  if(index<tasks.length-1){
+
+    const saved=Math.max(0,remaining);
+
+    index++;
+
+    const left=tasks.length-index;
+
+
+    /*
+      Redistribute saved time from the
+      completed task across remaining tasks.
+    */
+
+    duration=Math.max(
+      1,
+      duration+saved/left
+    );
+
+
+    remaining=duration;
+
+    running=true;
+
+    lastTick=performance.now();
+
+    render();
+
+    raf=requestAnimationFrame(loop);
+
+
+  }else{
+
+    finishAll();
+
+  }
+
 }
+
+
+/* =========================
+   FINISH
+   ========================= */
+
 function finishAll(){
- running=false;remaining=0;
- document.getElementById('currentTask').textContent='WORKLOAD COMPLETE';
- document.getElementById('taskCount').textContent='DONE';
- document.getElementById('overall').textContent='ALL TASKS FINISHED';
- document.getElementById('clock').textContent='00:00';
- document.getElementById('bar').style.width='100%';
+
+  running=false;
+
+  remaining=0;
+
+
+  document.getElementById('currentTask').textContent=
+    'WORKLOAD COMPLETE';
+
+
+  document.getElementById('taskCount').textContent=
+    'DONE';
+
+
+  document.getElementById('overall').textContent=
+    'ALL TASKS FINISHED';
+
+
+  document.getElementById('clock').textContent=
+    '00:00';
+
+
+  document.getElementById('bar').style.width=
+    '100%';
+
 }
-[startDate,endDate].forEach(x=>x.addEventListener('input',updateSummary));
-document.getElementById('add').onclick=()=>addTask();
+
+
+/* =========================
+   EVENT LISTENERS
+   ========================= */
+
+[
+  startDate,
+  startTime,
+  endDate,
+  endTime
+].forEach(x=>{
+
+  x.addEventListener(
+    'input',
+    updateSummary
+  );
+
+});
+
+
+document.getElementById('add').onclick=()=>{
+  addTask();
+};
+
+
 document.getElementById('start').onclick=start;
+
+
 document.getElementById('pause').onclick=()=>{
- if(!running){running=true;lastTick=performance.now();render();raf=requestAnimationFrame(loop)}
- else{running=false;render()}
+
+  if(!running){
+
+    running=true;
+
+    lastTick=performance.now();
+
+    render();
+
+    raf=requestAnimationFrame(loop);
+
+  }else{
+
+    running=false;
+
+    render();
+
+  }
+
 };
+
+
 document.getElementById('skip').onclick=next;
-document.getElementById('plus5').onclick=()=>{remaining+=300;duration+=300;render()};
-document.getElementById('back').onclick=()=>{
- running=false;cancelAnimationFrame(raf);
- document.getElementById('timer').classList.remove('active');
- document.getElementById('setup').classList.remove('hidden');updateSummary()
+
+
+document.getElementById('plus5').onclick=()=>{
+
+  remaining+=300;
+
+  duration+=300;
+
+  render();
+
 };
-setDefaults();addTask();addTask();updateSummary();
+
+
+document.getElementById('back').onclick=()=>{
+
+  running=false;
+
+  cancelAnimationFrame(raf);
+
+  document
+    .getElementById('timer')
+    .classList.remove('active');
+
+  document
+    .getElementById('setup')
+    .classList.remove('hidden');
+
+  updateSummary();
+
+};
+
+
+/* =========================
+   INITIALIZE
+   ========================= */
+
+setDefaults();
+
+addTask();
+
+addTask();
+
+updateSummary();
+
 </script>
+
 </body>
 </html>
