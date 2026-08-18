@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -231,12 +232,14 @@ input:focus{
   letter-spacing:-.09em;
   margin:20px 0 28px;
   font-variant-numeric:tabular-nums;
+  white-space:nowrap;
 }
 
 .progress{
   height:20px;
   border:4px solid var(--ink);
   background:var(--paper);
+  overflow:hidden;
 }
 
 .bar{
@@ -362,13 +365,6 @@ input:focus{
     margin-top:10px;
   }
 
-  /*
-    DATE + TIME
-
-    Instead of one giant datetime-local control,
-    mobile gets two controlled native inputs.
-  */
-
   .datetime-group{
     grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr);
     gap:7px;
@@ -398,11 +394,6 @@ input:focus{
     border-radius:0;
     font-size:15px;
   }
-
-  /*
-    Prevent Safari's native date/time controls
-    from forcing the input outside its container.
-  */
 
   input[type=date]::-webkit-date-and-time-value{
     text-align:left;
@@ -734,6 +725,7 @@ let running=false;
 let lastTick=0;
 let raf=null;
 let endAt=0;
+let startTimeout=null;
 
 
 /* =========================
@@ -776,8 +768,13 @@ function parseLocal(dateValue,timeValue){
     return null;
   }
 
-  const [year,month,day]=dateValue.split('-').map(Number);
-  const [hour,minute]=timeValue.split(':').map(Number);
+  const [year,month,day]=dateValue
+    .split('-')
+    .map(Number);
+
+  const [hour,minute]=timeValue
+    .split(':')
+    .map(Number);
 
   if(
     !year ||
@@ -801,17 +798,36 @@ function parseLocal(dateValue,timeValue){
 }
 
 
+/*
+  Format positive AND negative durations.
+
+  Examples:
+
+  05:32
+  00:01
+  00:00
+  -00:01
+  -05:32
+  -01:12:45
+*/
+
 function fmt(sec){
 
-  sec=Math.max(0,Math.ceil(sec));
+  const negative=sec<0;
+
+  sec=Math.abs(Math.ceil(sec));
 
   let h=Math.floor(sec/3600);
   let m=Math.floor((sec%3600)/60);
   let s=sec%60;
 
-  return h
+  const value=h
     ? `${pad(h)}:${pad(m)}:${pad(s)}`
     : `${pad(m)}:${pad(s)}`;
+
+  return negative
+    ? `-${value}`
+    : value;
 }
 
 
@@ -860,7 +876,10 @@ function addTask(name=''){
   row.append(input,btn);
   tasksEl.append(row);
 
-  input.addEventListener('input',updateSummary);
+  input.addEventListener(
+    'input',
+    updateSummary
+  );
 
 }
 
@@ -942,6 +961,15 @@ function setDefaults(){
 function start(){
 
   error.textContent='';
+
+  /*
+    Clear any old delayed start.
+  */
+
+  if(startTimeout){
+    clearTimeout(startTimeout);
+    startTimeout=null;
+  }
 
 
   tasks=[
@@ -1030,7 +1058,9 @@ function start(){
       'STARTS '+fmt(delay/1000);
 
 
-    setTimeout(()=>{
+    startTimeout=setTimeout(()=>{
+
+      startTimeout=null;
 
       running=true;
 
@@ -1084,18 +1114,33 @@ function render(){
     `DEADLINE ${fmtClock(new Date(endAt))}`;
 
 
+  /*
+    The progress bar represents the current task.
+
+    At zero = 100%.
+    Negative = remains full.
+
+    The timer itself is allowed to continue
+    past zero indefinitely.
+  */
+
+  const progress=
+    duration>0
+      ? (1-remaining/duration)*100
+      : 100;
+
+
   document.getElementById('bar').style.width=
     Math.max(
       0,
-      Math.min(
-        100,
-        (1-remaining/duration)*100
-      )
+      Math.min(100,progress)
     )+'%';
 
 
   document.getElementById('pause').textContent=
-    running ? 'Pause' : 'Resume';
+    running
+      ? 'Pause'
+      : 'Resume';
 
 }
 
@@ -1103,6 +1148,25 @@ function render(){
 /* =========================
    TIMER LOOP
    ========================= */
+
+/*
+  IMPORTANT:
+
+  Reaching zero does NOT finish the task.
+
+  The timer continues:
+
+  00:02
+  00:01
+  00:00
+  -00:01
+  -00:02
+  -00:03
+  ...
+
+  The user decides when the task is actually
+  finished by pressing "Finish task".
+*/
 
 function loop(now){
 
@@ -1121,36 +1185,11 @@ function loop(now){
 
 
   /*
-    Never allow the workload
-    to run past the actual deadline.
+    There is intentionally NO deadline clamp here.
+
+    The overall deadline is a target/reference only.
+    The workload is allowed to continue past it.
   */
-
-  const untilDeadline=
-    (endAt-Date.now())/1000;
-
-
-  if(untilDeadline<=0){
-
-    finishAll();
-
-    return;
-  }
-
-
-  if(remaining>untilDeadline){
-
-    remaining=untilDeadline;
-
-  }
-
-
-  if(remaining<=0){
-
-    next();
-
-    return;
-  }
-
 
   render();
 
@@ -1163,11 +1202,38 @@ function loop(now){
    NEXT TASK
    ========================= */
 
+/*
+  Finish the current task and redistribute
+  its remaining/overrun time across every
+  task that has not started yet.
+
+  Examples:
+
+  Current task:
+    +05:00 remaining
+
+  2 tasks left:
+
+    +05:00 / 2 = +02:30
+
+  Each remaining task gains 2:30.
+
+
+  Current task:
+    -05:00 remaining
+
+  2 tasks left:
+
+    -05:00 / 2 = -02:30
+
+  Each remaining task loses 2:30.
+*/
+
 function next(){
 
   if(index<tasks.length-1){
 
-    const saved=Math.max(0,remaining);
+    const timeDifference=remaining;
 
     index++;
 
@@ -1175,13 +1241,19 @@ function next(){
 
 
     /*
-      Redistribute saved time from the
-      completed task across remaining tasks.
+      duration is the current assigned duration.
+
+      Positive remaining means the task finished early.
+
+      Negative remaining means the task went overtime.
+
+      Spread that difference evenly over
+      all remaining tasks.
     */
 
     duration=Math.max(
       1,
-      duration+saved/left
+      duration + timeDifference/left
     );
 
 
@@ -1198,6 +1270,11 @@ function next(){
 
   }else{
 
+    /*
+      The final task is only complete when the
+      user explicitly presses FINISH TASK.
+    */
+
     finishAll();
 
   }
@@ -1206,7 +1283,7 @@ function next(){
 
 
 /* =========================
-   FINISH
+   FINISH ALL
    ========================= */
 
 function finishAll(){
@@ -1214,6 +1291,12 @@ function finishAll(){
   running=false;
 
   remaining=0;
+
+
+  if(raf){
+    cancelAnimationFrame(raf);
+    raf=null;
+  }
 
 
   document.getElementById('currentTask').textContent=
@@ -1234,6 +1317,10 @@ function finishAll(){
 
   document.getElementById('bar').style.width=
     '100%';
+
+
+  document.getElementById('pause').textContent=
+    'Pause';
 
 }
 
@@ -1265,6 +1352,10 @@ document.getElementById('add').onclick=()=>{
 document.getElementById('start').onclick=start;
 
 
+/* =========================
+   PAUSE / RESUME
+   ========================= */
+
 document.getElementById('pause').onclick=()=>{
 
   if(!running){
@@ -1281,6 +1372,11 @@ document.getElementById('pause').onclick=()=>{
 
     running=false;
 
+    if(raf){
+      cancelAnimationFrame(raf);
+      raf=null;
+    }
+
     render();
 
   }
@@ -1288,8 +1384,16 @@ document.getElementById('pause').onclick=()=>{
 };
 
 
+/* =========================
+   FINISH CURRENT TASK
+   ========================= */
+
 document.getElementById('skip').onclick=next;
 
+
+/* =========================
+   ADD 5 MINUTES
+   ========================= */
 
 document.getElementById('plus5').onclick=()=>{
 
@@ -1302,11 +1406,24 @@ document.getElementById('plus5').onclick=()=>{
 };
 
 
+/* =========================
+   RESET
+   ========================= */
+
 document.getElementById('back').onclick=()=>{
 
   running=false;
 
-  cancelAnimationFrame(raf);
+  if(raf){
+    cancelAnimationFrame(raf);
+    raf=null;
+  }
+
+  if(startTimeout){
+    clearTimeout(startTimeout);
+    startTimeout=null;
+  }
+
 
   document
     .getElementById('timer')
@@ -1337,3 +1454,4 @@ updateSummary();
 
 </body>
 </html>
+```
