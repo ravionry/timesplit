@@ -108,6 +108,47 @@ input:focus{border-color:var(--blue)}
   .shell{padding:12px}
   header{padding:14px}
 }
+
+/* Mobile-first refinements */
+@media (max-width:700px){
+  html{font-size:16px}
+  body{overflow-x:hidden}
+  .shell{width:100%;padding:10px}
+  header{padding:13px 14px;border-width:3px;align-items:flex-start;flex-direction:column;gap:5px}
+  .logo{font-size:25px}
+  .status{font-size:10px}
+  .grid{display:block;margin-top:10px}
+  .card{border-width:3px;padding:14px;margin-bottom:10px}
+  .grid .card + .card{margin-top:10px}
+  input[type=datetime-local],input[type=text]{width:100%;min-height:48px;padding:11px;border-width:3px;font-size:16px;border-radius:0}
+  .task{grid-template-columns:minmax(0,1fr) 44px;gap:6px;margin-bottom:7px}
+  .task button{min-height:48px;border-width:3px}
+  .add{min-height:44px;padding:10px 12px}
+  .time-summary{border-width:3px;font-size:13px;padding:10px;word-break:break-word}
+  .start{margin-top:10px;min-height:58px;padding:14px;border-width:3px;font-size:18px}
+  .timer{padding:14px;margin-top:10px}
+  .task-name{font-size:clamp(30px,10vw,48px);line-height:.92;margin:10px 0 18px;overflow-wrap:anywhere}
+  .clock{font-size:clamp(55px,17vw,92px);letter-spacing:-.08em;margin:18px 0 22px;white-space:nowrap}
+  .progress{height:14px;border-width:3px}
+  .meta{font-size:10px;flex-direction:column;align-items:flex-start;gap:4px}
+  .controls{grid-template-columns:1fr 1fr;gap:7px;margin-top:16px}
+  .control{min-height:50px;padding:11px 7px;border-width:3px;font-size:12px}
+  .footer{position:static;transform:none;width:100%;margin:22px 0 10px;padding:10px 0;border:0;background:transparent;color:var(--ink);font-size:11px}
+  .footer a{color:var(--blue)}
+}
+@media (max-width:380px){
+  .shell{padding:7px}
+  .card{padding:11px}
+  .logo{font-size:22px}
+  .clock{font-size:50px}
+  .controls{grid-template-columns:1fr}
+  .control{width:100%}
+  .task-name{font-size:29px}
+}
+@media (min-width:701px){
+  .footer{position:static;transform:none}
+}
+
 </style>
 </head>
 <body>
